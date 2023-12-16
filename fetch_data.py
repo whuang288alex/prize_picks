@@ -25,11 +25,12 @@ c = conn.cursor()
 
 
 # 3. Update Data one team at a time
+timeout = 200
 for team in tqdm(teams.get_teams()):
     
     # 3-1 UPDATE TeamStats table
-    time.sleep(0.06)
-    team_game_data = teamgamelog.TeamGameLog(team_id=team['id'], date_from_nullable=last_update).get_dict()["resultSets"][0]
+    time.sleep(0.1)
+    team_game_data = teamgamelog.TeamGameLog(team_id=team['id'], date_from_nullable=last_update, timeout=timeout).get_dict()["resultSets"][0]
     team_game_headers = team_game_data['headers']
     assert team_game_headers == ['Team_ID', 'Game_ID', 'GAME_DATE', 'MATCHUP', 'WL', 'W', 'L', 'W_PCT', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS'], f"headers has changed format: {team_game_headers}"
     print(f"\n\nFound {len(team_game_data['rowSet'])} new team stats for {team['full_name']}")
@@ -58,8 +59,8 @@ for team in tqdm(teams.get_teams()):
         defensive_rating = this_team_advanced_stat[advanced_stats_headers.index("DEF_RATING")]
         
         # Get opponent stats
-        time.sleep(0.06)
-        opponent_data = teamgamelog.TeamGameLog(team_id=opponent_team_id).get_dict()["resultSets"][0]
+        time.sleep(0.1)
+        opponent_data = teamgamelog.TeamGameLog(team_id=opponent_team_id, timeout=timeout).get_dict()["resultSets"][0]
         opponent_stats_headers = opponent_data['headers']
         assert opponent_stats_headers == ['Team_ID', 'Game_ID', 'GAME_DATE', 'MATCHUP', 'WL', 'W', 'L', 'W_PCT', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS'], f"opponent_stats_headers has changed format: {opponent_stats_headers}"
         for opponent_game_results in opponent_data["rowSet"]:
@@ -95,8 +96,8 @@ for team in tqdm(teams.get_teams()):
         conn.commit()
     
     # 3-2 UPDATE PlayerStats table
-    time.sleep(0.06)
-    roster_data = commonteamroster.CommonTeamRoster(team_id=team['id']).get_dict()["resultSets"][0]
+    time.sleep(0.1)
+    roster_data = commonteamroster.CommonTeamRoster(team_id=team['id'], timeout=timeout).get_dict()["resultSets"][0]
     roster_headers = roster_data['headers']
     assert roster_headers == ['TeamID', 'SEASON', 'LeagueID', 'PLAYER', 'NICKNAME', 'PLAYER_SLUG', 'NUM', 'POSITION', 'HEIGHT', 'WEIGHT', 'BIRTH_DATE', 'AGE', 'EXP', 'SCHOOL', 'PLAYER_ID', 'HOW_ACQUIRED'], f"roster_headers has changed format: {roster_headers}"
     
@@ -107,8 +108,8 @@ for team in tqdm(teams.get_teams()):
         player_name = player_info[roster_data["headers"].index("PLAYER")]
         player_id = player_info[roster_data["headers"].index("PLAYER_ID")]
         
-        time.sleep(0.06)
-        player_game_data = playergamelog.PlayerGameLog(player_id=player_id, date_from_nullable=last_update).get_dict()["resultSets"][0]
+        time.sleep(0.1)
+        player_game_data = playergamelog.PlayerGameLog(player_id=player_id, date_from_nullable=last_update, timeout=timeout).get_dict()["resultSets"][0]
         player_game_headers = player_game_data['headers']
         assert player_game_headers  == ['SEASON_ID', 'Player_ID', 'Game_ID', 'GAME_DATE', 'MATCHUP', 'WL', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'PLUS_MINUS', 'VIDEO_AVAILABLE'], f"player_game_headers has changed format: {player_game_headers}"
         
@@ -155,6 +156,6 @@ for team in tqdm(teams.get_teams()):
 
 # 4. Update config file
 with open('config.yaml', 'w') as file:
-    last_update = datetime.today() - timedelta(days=2)
+    last_update = datetime.today() - timedelta(days=1)
     config['last_update'] = last_update.strftime("%Y-%m-%d")
     yaml.dump(config, file)

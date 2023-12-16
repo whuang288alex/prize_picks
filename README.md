@@ -21,3 +21,13 @@ python fetch_data.py
 ```
 streamlit run --server.address 0.0.0.0 app.py
 ```
+
+# TODO:
+
+1. Add the record of this player against this team
+
+2. Show adjusted stats for a player according to opponent team defensive stats
+
+3. Add regular expression search for player name
+
+4. Build RandomForest for predictiing player stats

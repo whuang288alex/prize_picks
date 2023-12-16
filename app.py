@@ -33,7 +33,7 @@ st.title("Player Stats")
 
 # User input: Player name and stat category
 player_name = st.text_input("Enter player's name:", "LeBron James")
-stat_category = st.selectbox("Select a stat category:", STATS_FOR_DISPLAY, index=1)
+stat_category = st.selectbox("Select a stat category:", STATS_FOR_DISPLAY, index=2)
 last_n_games = st.slider("Select number of games:", 1, 15, 10)
 players_list = players.find_players_by_full_name(player_name)
 home_game = st.selectbox("Home or Away:", ["All", "Home", "Away"], index=0)
@@ -66,16 +66,17 @@ if len(players_list) > 0:
     if fields != "":
         # Get this stats for the player
         pid = players_list[0]['id']
-        c.execute(f'''SELECT game_date, {fields} from PlayerStats WHERE player_id={pid} AND {home_game_clause} ORDER BY game_date DESC LIMIT {last_n_games}''')
+        c.execute(f'''SELECT game_date, opponent_team_id, {fields} from PlayerStats WHERE player_id={pid} AND {home_game_clause} ORDER BY game_date DESC LIMIT {last_n_games}''')
         player_stats = c.fetchall()
         conn.commit()
         
         # Create a list of the stats
         dates = [stat[0] for stat in player_stats]
-        data = [stat[1] for stat in player_stats]
+        opponent_team_name = [ teams.find_team_name_by_id(stat[1])['nickname'] for stat in player_stats]
+        data = [stat[2] for stat in player_stats]
         
         # pick a threshold, default to the mean of the stats
-        threshold = st.slider("Select a threshold:", 0.0, 50.0, np.mean(data), 0.5)
+        threshold = st.slider("Select a threshold:", 0.0, 60.0, np.mean(data), 0.5)
         
         # STATS_FOR_DISPLAY the average stat value
         st.markdown(
@@ -91,11 +92,12 @@ if len(players_list) > 0:
         # Create a DataFrame for the stats
         df = pd.DataFrame({
             "Game": dates,
-            "Stat Value": data
+            "Stat Value": data,
+            "Opponent": opponent_team_name
         })
         
         # Create a line chart with point traces, and add a threshold line
-        fig1 = px.line(df, x="Game", y="Stat Value", title=f"{fields_to_display} Over the Past {last_n_games} Games")
+        fig1 = px.line(df, x="Game", y="Stat Value", hover_data=["Opponent"], title=f"{fields_to_display} Over the Past {last_n_games} Games")
         fig1.update_traces(mode='markers+lines', marker=dict(size=8, line=dict(width=2, color='DarkSlateGrey')))
         fig1.add_hline(y=threshold, line_dash="dot", annotation_text="Threshold", annotation_position="top right")
         fig1.update_yaxes(tickvals=list(range(int(min(data)), int(max(data)) + 1, 1)))
@@ -113,7 +115,7 @@ else:
 st.title("Team Defensive Stats")
 team_name = st.selectbox("Select a team:", TEAMS, index=0)
 team_stats_category = st.selectbox("Select a stat category for team data:", TEAM_STATS_FOR_DISPLAY, index=1)
-team_last_n_games = st.slider("Select number of games for team_data:", 1, 15, 10)
+team_last_n_games = st.slider("Select number of games for team_data:", 1, 15, 15)
 team_home_game = st.selectbox("Home or Away for team data:", ["All", "Home", "Away"], index=0)
 
 # Home game or away game
@@ -126,7 +128,7 @@ else:
 
 # Get this stats for the team    
 team_id = teams.find_teams_by_full_name(team_name)[0]['id']
-c.execute(f'''SELECT game_date, {TEAM_STATS[TEAM_STATS_FOR_DISPLAY.index(team_stats_category)]} from TeamStats WHERE team_id={team_id} AND {team_home_game_clause} ORDER BY game_date DESC LIMIT {team_last_n_games}''')
+c.execute(f'''SELECT game_date, opponent_team_id,{TEAM_STATS[TEAM_STATS_FOR_DISPLAY.index(team_stats_category)]} from TeamStats WHERE team_id={team_id} AND {team_home_game_clause} ORDER BY game_date DESC LIMIT {team_last_n_games}''')
 team_stats = c.fetchall()
 conn.commit()
 
@@ -138,7 +140,8 @@ this_stat_std = np.std(this_stat_for_all_games)
     
 # Create a list of the stats
 team_dates = [stat[0] for stat in team_stats]
-team_data = [(stat[1]- this_stat_mean)/this_stat_std for stat in team_stats]
+team_data = [(stat[2]- this_stat_mean)/this_stat_std for stat in team_stats]
+team_opponent_team_name = [ teams.find_team_name_by_id(stat[1])['nickname'] for stat in team_stats]
 
 # pick a threshold, default to the mean of the stats
 # team_threshold = st.slider("Select a threshold for team data:", 0.0, 50.0, np.mean(team_data), 0.5)
@@ -157,14 +160,15 @@ st.markdown(
 # Create a DataFrame for the stats
 team_df = pd.DataFrame({
     "Game": team_dates,
-    "Stat Value": team_data
+    "Stat Value": team_data,
+    "Opponent": team_opponent_team_name
 })
 
 
 # Create a line chart with point traces, and add a threshold line
-fig2 = px.line(team_df, x="Game", y="Stat Value", title=f"{team_stats_category} Over the Past {team_last_n_games} Games")
+fig2 = px.line(team_df, x="Game", y="Stat Value", hover_data=["Opponent"], title=f"{team_stats_category} Over the Past {team_last_n_games} Games")
 fig2.update_traces(mode='markers+lines', marker=dict(size=8, line=dict(width=2, color='DarkSlateGrey')))
-# fig2.add_hline(y=team_threshold, line_dash="dot", annotation_text="Threshold", annotation_position="top right")
+fig2.add_hline(y=0, line_dash="dot", annotation_text="Threshold", annotation_position="top right")
 # fig2.update_layout(width = width)
 
 # STATS_FOR_DISPLAY the chart
