@@ -3,6 +3,8 @@
 This is an App that visualizes data from NBA.com through NBA API. The goal is to make picking entries for <a href="https://www.prizepicks.com/"> PrizePicks </a> as easy as possible!
 Stay tuned for the prediction model in the future! 
 
+<img width="1062" alt="image" src="https://github.com/whuang288alex/prize_picks/assets/91099638/d52b5c52-9dd9-41de-bbc0-e1800f16a02c">
+
 ## Requirements
 
 To set up the environment with conda, use the following commands:
